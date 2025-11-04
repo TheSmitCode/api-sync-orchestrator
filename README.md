@@ -79,4 +79,4 @@ MIT—free for commercial use. See [LICENSE](LICENSE).
 
 ---
 
-*Built by [Your Name] – Turning Upwork pains into open-source wins. Feedback? Open an issue! 🚀*
+*Built by [TheSmitCode] – Turning Upwork pains into open-source wins. Feedback? Open an issue! 🚀*
