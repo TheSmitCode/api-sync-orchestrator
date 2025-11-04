@@ -59,7 +59,7 @@ For web mode: `uvicorn main:app --reload` → POST `/sync` with config payload.
 No bloat—under 500 LOC for MVP.
 
 ## 📋 Installation & Quick Start
-1. Clone: `git clone https://github.com/yourusername/api-sync-orchestrator.git && cd api-sync-orchestrator`
+1. Clone: `git clone https://github.com/TheSmitCode/api-sync-orchestrator.git && cd api-sync-orchestrator`
 2. Setup: `pip install -r requirements.txt` (includes fastapi, uvicorn, pydantic, apscheduler, requests)
 3. Config: Copy `config.example.json` → `config.json` & add your keys.
 4. CLI: `python sync.py --config config.json --dry-run` (test without pushing).
