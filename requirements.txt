@@ -1,9 +1,8 @@
 fastapi==0.104.1
 uvicorn==0.24.0
-pydantic==2.5.0
+pydantic==1.10.13
 apscheduler==3.10.4
 requests==2.31.0
-airtable-python-wrapper==0.17.0
-psycopg2-binary==2.9.9
+pyairtable==2.3.0
 gspread==6.1.0
 python-dotenv==1.0.0
