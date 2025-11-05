@@ -1,0 +1,17 @@
+{
+  "timestamp": "2025-11-04T17:00:13.886970",
+  "synced_count": 2,
+  "target_type": "airtable",
+  "data_sample": [
+    {
+      "id": "inv_001",
+      "status": "paid",
+      "timestamp": "2025-11-04T17:00:13.886086"
+    },
+    {
+      "id": "inv_003",
+      "status": "paid",
+      "timestamp": "2025-11-04T17:00:13.886086"
+    }
+  ]
+}
