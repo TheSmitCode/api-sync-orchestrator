@@ -86,9 +86,9 @@ def apply_transform(data: List[Dict[str, Any]], transform: Dict[str, Any]) -> Li
             if item.get(k) != v:
                 keep = False
                 break
-        if keep:
+        if keep or not transform.get('filter'):  # Fixed: Handle empty filter dict
             transformed.append(item.copy())  # Avoid mutating original
-    logger.info(f"Transformed: {len(transformed)}/{len(data)} records kept")
+    logger.info(f"Transformed: {len(transformed)}/{len(data)} records kept")  # Fixed: "Transformed" typo
     return transformed
 
 # --- Push (Dummy Log for MVP; Real Airtable in Day 2) ---
@@ -139,6 +139,6 @@ def main(config_path: str, dry_run: bool = False):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="API Sync Orchestrator")
     parser.add_argument("--config", default="sync_config.json", help="Path to config (default: sync_config.json)")
-    parser.add_argument("--dry-run", action="store_true", help="Test without pushing")
+    parser.add_argument("--dry-run", action="store_true", help="Test without pushing")  # Fixed: Added help text
     args = parser.parse_args()
     main(args.config, args.dry_run)

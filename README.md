@@ -1,22 +1,27 @@
 API Sync Orchestrator
 
+A lightweight, JSON-configurable Python tool for orchestrating API data syncs — pull from multiple sources (e.g., Stripe, Shopify), transform with simple rules, and push to targets like Airtable or Postgres.
 
+Perfect for ETL without the bloat: CLI for devs, web API for non-techies.
+Inspired by real-world Upwork gigs for e-comm/CRM integrations.
 
-
-A lightweight, JSON-configurable Python tool for orchestrating API data syncs—pull from multiple sources (e.g., Stripe, Shopify), transform with simple rules, and push to targets like Airtable or Postgres. Perfect for ETL without the bloat: CLI for devs, web API for non-techies. Inspired by real-world Upwork gigs for e-comm/CRM integrations.
 🚀 Why Use This?
+
 Tired of writing one-off scripts for API glue? This handles:
 
-Multi-Source Syncs: Fetch from REST APIs with auth (Bearer, API keys).
-JSON Transformations: User-defined rules (add fields, filter, map) via validated configs—no code changes.
-Scheduling: Cron-like jobs with APScheduler (e.g., every 5min).
-Error-Resilient: Retries, JSON logs, and audit trails for debugging.
-Targets: Airtable, Google Sheets, Postgres, or custom webhooks.
+✅ Multi-Source Syncs – Fetch from REST APIs with auth (Bearer, API keys)
+✅ JSON Transformations – User-defined rules (add fields, filter, map) via validated configs—no code changes
+✅ Scheduling – Cron-like jobs with APScheduler (e.g., every 5min)
+✅ Error-Resilient – Retries, JSON logs, and audit trails for debugging
+✅ Targets – Airtable, Google Sheets, Postgres, or custom webhooks
 
-Built for indie hackers & freelancers: Quick to deploy on Vercel for live dashboards, or run locally as CLI.
+Built for indie hackers & freelancers: quick to deploy on Vercel for live dashboards or run locally as CLI.
+
 🎯 Quick Example
-Define a sync in sync_config.json:
-json{
+
+sync_config.json
+
+{
   "sources": [
     {
       "api": "stripe",
@@ -35,60 +40,93 @@ json{
     "table": "Invoices",
     "api_key": "keyXXXX"
   },
-  "schedule": "*/5 * * * *",  // Every 5 minutes
+  "schedule": "*/5 * * * *",
   "retries": 3
 }
+
 🛠 Tech Stack
 
-Core: Python 3.8+, requests for API calls, json for configs.
-API Layer: FastAPI for REST endpoints (e.g., /sync, /logs).
-Scheduling: APScheduler for cron jobs.
-Targets: Manual for MVP; add pyairtable, gspread, psycopg2 for real (optional in requirements.txt).
-Deploy: Vercel (serverless) or Docker for prod.
+Core: Python 3.11+
 
-📋 Installation & Quick Start
-Easy One-Command Setup (Rust first for Pydantic v2 build, then pips):
+Requests: For API calls
 
-Windows: .\setup.ps1 (PowerShell).
-Mac/Linux: bash setup.sh.
+Pydantic v2: Schema validation
 
-It creates venv, installs deps (pips after Rust), and tests with dry-run.
-Manual (if preferred):
+FastAPI: REST layer
 
-Clone:
-textgit clone https://github.com/TheSmitCode/api-sync-orchestrator.git && cd api-sync-orchestrator
+APScheduler: Cron scheduling
 
-Rust (required for Pydantic v2 build):
+Deploy: Vercel, Docker, or bare-metal
 
-Windows: winget install Rustlang.Rustup.
-Mac/Linux: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh.
+📋 Installation & Setup
+🪄 Option 1 — Easy Setup (Recommended)
+
+Run the setup script (auto-installs everything, including Rust if missing):
+
+Windows
+.\setup.ps1
+
+macOS / Linux
+bash setup.sh
 
 
-Venv & Deps:
-textpython -m venv .venv
-.venv\Scripts\activate  # Windows; source .venv/bin/activate for Mac/Linux
+What it does:
+
+Checks Python version (recommends 3.11 or 3.12)
+
+Installs Rust toolchain (required by Pydantic v2)
+
+Creates virtual environment .venv
+
+Installs requirements.txt
+
+Runs a dry test
+
+🧩 Option 2 — Manual Setup
+git clone https://github.com/TheSmitCode/api-sync-orchestrator.git
+cd api-sync-orchestrator
+
+# Install Rust (only once)
+winget install Rustlang.Rustup  # Windows
+# or
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh  # macOS/Linux
+
+# Setup Python
+py -3.12 -m venv .venv
+.\.venv\Scripts\activate  # Windows
 pip install --upgrade pip
 pip install -r requirements.txt
 
-Test:
-textpython sync.py --dry-run  # Test without "pushing"
-python sync.py  # Full sync (dummy mode)
 
-Scheduler:
-textpython scheduler.py  # Runs on cron from JSON (every minute for MVP)
+⚠️ If using Windows, ensure Visual Studio Build Tools 2022 is installed (includes cl.exe compiler).
 
-API:
-textpython main.py  # Starts server at http://127.0.0.1:8000
+🧪 Test & Run
+python sync.py --dry-run     # Simulate sync
+python sync.py               # Full sync
+python scheduler.py          # Run scheduled jobs
+python main.py               # Start API server
 
 
-Templates Included: E-comm (Stripe → Shopify), CRM (HubSpot → Airtable). Fork & customize!
+Visit: http://127.0.0.1:8000
+
+🧱 Templates Included
+
+Stripe → Airtable
+
+Shopify → Google Sheets
+
+HubSpot → CRM
+
 🤝 Contributing
 
-PRs welcome: Add new sources (e.g., GitHub API) or targets.
-Issues: Report bugs or request features (e.g., GraphQL support).
-Stars/Forks: Help spread the word—aiming for 100+ from r/Python & Upwork shares!
+Add new sources: e.g., GitHub, Salesforce
+
+Raise issues: Feature requests or bug reports
+
+Star the repo: Help reach 100+ on r/Python & Upwork!
 
 📄 License
-MIT—free for commercial use. See LICENSE.
 
-Built by TheSmitCode – Turning Upwork pains into open-source wins. Feedback? Open an issue! 🚀
+MIT — free for commercial and personal use.
+
+Built by TheSmitCode — turning Upwork pains into open-source wins 🚀

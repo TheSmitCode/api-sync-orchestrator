@@ -1,19 +1,22 @@
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel  # v1 locked—no conflicts
+from pydantic import BaseModel, ConfigDict
 from typing import Dict, Any
 import uvicorn
+import os
+import json  # For dump/load in /sync
 from sync import main  # Import main from sync.py
 
 app = FastAPI(title="API Sync Orchestrator", version="1.0.0")
 
 class SyncRequest(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     config: Dict[str, Any]  # Full JSON config
     dry_run: bool = False
 
 @app.post("/sync")
 async def sync_endpoint(req: SyncRequest):
     try:
-        # Save config to temp file (for main())
+        # Save config to temp file
         temp_config = "temp_config.json"
         with open(temp_config, "w") as f:
             json.dump(req.config, f, indent=2)
@@ -21,7 +24,7 @@ async def sync_endpoint(req: SyncRequest):
         # Run sync
         main(temp_config, req.dry_run)
         
-        # Read audit (last file in logs/)
+        # Read last audit (for response)
         audit_files = [f for f in os.listdir("logs") if f.startswith("audit_")][-1]
         with open(f"logs/{audit_files}", "r") as f:
             audit = json.load(f)
