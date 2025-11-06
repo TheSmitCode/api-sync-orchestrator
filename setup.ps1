@@ -47,7 +47,7 @@ pip install --upgrade pip
 Write-Host "📦 Installing requirements..." -ForegroundColor Yellow
 pip install -r requirements.txt
 
-# Step 6: Test run (verify flow)
+# Step 6: Test run
 Write-Host "🧪 Running dry-run test..." -ForegroundColor Yellow
 try {
     python sync.py --dry-run

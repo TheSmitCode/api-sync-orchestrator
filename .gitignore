@@ -169,3 +169,10 @@ logs/*.json
 
 # Environment files
 .env
+
+# Virtual Environments
+.venv312/
+.venv3*  # Pattern for future v3.x venvs
+
+# Test Files
+test-sync.json
