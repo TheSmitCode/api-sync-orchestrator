@@ -7,6 +7,9 @@ from datetime import datetime
 import argparse
 import requests
 from requests.exceptions import RequestException
+from dotenv import load_dotenv  # Load .env
+
+load_dotenv()  # Loads .env or Vercel env vars
 
 # Setup logging (console + file)
 os.makedirs("logs", exist_ok=True)
@@ -58,16 +61,28 @@ def load_config(path: str) -> Dict[str, Any]:
         data = json.load(f)
     return validate_config(data)
 
-# --- Fetch with Retries (Dummy for MVP; Real Stripe in Day 2) ---
+# --- Fetch with Retries (Real Stripe API – Fixed URL) ---
 def fetch_from_source(source: Dict[str, Any], retries: int = 3) -> List[Dict[str, Any]]:
-    # Dummy data for testing (replace with real requests.get for Stripe)
-    dummy_data = [
-        {"id": "inv_001", "status": "paid"},
-        {"id": "inv_002", "status": "pending"},
-        {"id": "inv_003", "status": "paid"}
-    ]
-    logger.info(f"Fetched {len(dummy_data)} records from {source['api']} (dummy mode)")
-    return dummy_data
+    base_url = "https://api.stripe.com/v1"
+    endpoint = source['endpoint'].lstrip('/')  # Fix: Strip leading "/" to avoid double v1
+    url = f"{base_url}/{endpoint}"
+    token = source['auth']['token'] or os.getenv('STRIPE_SECRET_KEY')  # JSON or .env
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    for attempt in range(1, retries + 1):
+        try:
+            response = requests.get(url, headers=headers, params=source['params'], timeout=10)
+            response.raise_for_status()
+            data = response.json()
+            records = data.get('data', [])
+            logger.info(f"Fetched {len(records)} records from {source['api']} (attempt {attempt})")
+            return records
+        except RequestException as e:
+            logger.warning(f"Fetch attempt {attempt} failed for {source['api']}: {e}")
+            if attempt == retries:
+                logger.error(f"All {retries} attempts failed")
+                return []
+            time.sleep(2 ** attempt)  # Exponential backoff
 
 # --- Transform ---
 def apply_transform(data: List[Dict[str, Any]], transform: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -86,12 +101,12 @@ def apply_transform(data: List[Dict[str, Any]], transform: Dict[str, Any]) -> Li
             if item.get(k) != v:
                 keep = False
                 break
-        if keep or not transform.get('filter'):  # Fixed: Handle empty filter dict
+        if keep:
             transformed.append(item.copy())  # Avoid mutating original
-    logger.info(f"Transformed: {len(transformed)}/{len(data)} records kept")  # Fixed: "Transformed" typo
+    logger.info(f"Transformed: {len(transformed)}/{len(data)} records kept")
     return transformed
 
-# --- Push (Dummy Log for MVP; Real Airtable in Day 2) ---
+# --- Push (Dummy Log for MVP; Real Airtable in Day 7) ---
 def push_to_target(data: List[Dict[str, Any]], target: Dict[str, Any]) -> Dict[str, Any]:
     # Dummy "push" (create audit JSON)
     audit = {
@@ -139,6 +154,6 @@ def main(config_path: str, dry_run: bool = False):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="API Sync Orchestrator")
     parser.add_argument("--config", default="sync_config.json", help="Path to config (default: sync_config.json)")
-    parser.add_argument("--dry-run", action="store_true", help="Test without pushing")  # Fixed: Added help text
+    parser.add_argument("--dry-run", action="store_true", help="Test without pushing")
     args = parser.parse_args()
     main(args.config, args.dry_run)
