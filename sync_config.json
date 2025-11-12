@@ -1,0 +1,31 @@
+{
+  "sources": [
+    {
+      "api": "stripe",
+      "endpoint": "/v1/invoices",
+      "auth": {
+        "type": "bearer",
+        "token": "STRIPE_API_KEY"
+      },
+      "params": {
+        "limit": 10
+      }
+    }
+  ],
+  "transform": {
+    "add_field": {
+      "timestamp": "{{ now() }}"
+    },
+    "filter": {
+      "status": "paid"
+    }
+  },
+  "target": {
+    "type": "airtable",
+    "base_id": "appXXXX",
+    "table": "Invoices",
+    "api_key": "AIRTABLE_API_KEY"
+  },
+  "schedule": "*/5 * * * *",
+  "retries": 3
+}

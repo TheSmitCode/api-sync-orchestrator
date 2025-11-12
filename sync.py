@@ -1,132 +1,88 @@
 import os
 import json
-import time
-import logging
 import requests
-from dotenv import load_dotenv
-from argparse import ArgumentParser
+from datetime import datetime
+from typing import Any
 
-# Load environment variables from .env
-load_dotenv()
+CONFIG_FILE = "test-sync.json"
 
-# Logging setup
-LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
-logging.basicConfig(
-    level=LOG_LEVEL,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
-logger = logging.getLogger(__name__)
+# Load secrets from environment
+STRIPE_API_KEY = os.getenv("STRIPE_API_KEY", "TEST_KEY_123")
+AIRTABLE_API_KEY = os.getenv("AIRTABLE_API_KEY", "TEST_KEY_123")
 
-# Environment keys
-STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "")
-AIRTABLE_API_KEY = os.getenv("AIRTABLE_API_KEY", "")
-AIRTABLE_BASE_ID = os.getenv("AIRTABLE_BASE_ID", "")
-AIRTABLE_TABLE = os.getenv("AIRTABLE_TABLE", "")
-
-# Default retry attempts
-RETRIES = int(os.getenv("RETRIES", 3))
-
-
-def load_config(path="sync_config.json"):
-    """Load JSON config safely"""
+def fetch_api_data(source: dict) -> Any:
+    """Fetch data from API source."""
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        headers = {}
+        if "auth_token" in source:
+            headers["Authorization"] = f"Bearer {source['auth_token']}"
+        response = requests.get(source["endpoint"], headers=headers, params=source.get("params", {}))
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        print(f"[ERROR] Fetching {source.get('endpoint')}: {e}")
+        return None
+
+def transform_data(data: Any, rules: dict) -> Any:
+    """Transform data according to rules."""
+    if not data:
+        return None
+    # Example: add timestamp field
+    add_fields = rules.get("add_field", {})
+    for k, v in add_fields.items():
+        data[k] = datetime.utcnow().isoformat() if v == "{{ now() }}" else v
+    # Additional filtering could be added here
+    return data
+
+def push_to_target(target: dict, data: Any) -> bool:
+    """Push data to target (Airtable placeholder example)."""
+    if not data:
+        return False
+    try:
+        if target["type"] == "airtable":
+            url = f"https://api.airtable.com/v0/{target['base_id']}/{target['table']}"
+            headers = {"Authorization": f"Bearer {target.get('api_key', AIRTABLE_API_KEY)}",
+                       "Content-Type": "application/json"}
+            response = requests.post(url, headers=headers, json={"fields": data})
+            response.raise_for_status()
+            return True
+        # Additional targets (Postgres, webhooks) can be added here
+        return False
+    except Exception as e:
+        print(f"[ERROR] Pushing to {target.get('type')}: {e}")
+        return False
+
+def load_config():
+    """Load JSON sync configuration."""
+    try:
+        with open(CONFIG_FILE) as f:
             return json.load(f)
-    except FileNotFoundError:
-        logger.error(f"Config file not found: {path}")
-        raise
-    except json.JSONDecodeError as e:
-        logger.error(f"Invalid JSON in config: {e}")
-        raise
+    except Exception as e:
+        print(f"[ERROR] Loading config: {e}")
+        return None
 
-
-def fetch_stripe_invoices(limit=10):
-    """Fetch invoices from Stripe"""
-    if not STRIPE_SECRET_KEY:
-        logger.warning("Stripe key missing, skipping fetch")
-        return []
-
-    url = f"https://api.stripe.com/v1/invoices?limit={limit}"
-    headers = {"Authorization": f"Bearer {STRIPE_SECRET_KEY}"}
-
-    for attempt in range(1, RETRIES + 1):
-        try:
-            response = requests.get(url, headers=headers, timeout=10)
-            response.raise_for_status()
-            invoices = response.json().get("data", [])
-            logger.info(f"Fetched {len(invoices)} Stripe invoices")
-            return invoices
-        except requests.RequestException as e:
-            logger.warning(f"Attempt {attempt} failed for Stripe: {e}")
-            time.sleep(2 ** attempt)
-
-    logger.error("All Stripe fetch attempts failed")
-    return []
-
-
-def fetch_airtable_records():
-    """Fetch records from Airtable"""
-    if not (AIRTABLE_API_KEY and AIRTABLE_BASE_ID and AIRTABLE_TABLE):
-        logger.warning("Airtable credentials missing, skipping fetch")
-        return []
-
-    url = f"https://api.airtable.com/v0/{AIRTABLE_BASE_ID}/{AIRTABLE_TABLE}"
-    headers = {"Authorization": f"Bearer {AIRTABLE_API_KEY}"}
-
-    for attempt in range(1, RETRIES + 1):
-        try:
-            response = requests.get(url, headers=headers, timeout=10)
-            response.raise_for_status()
-            records = response.json().get("records", [])
-            logger.info(f"Fetched {len(records)} Airtable records")
-            return records
-        except requests.RequestException as e:
-            logger.warning(f"Attempt {attempt} failed for Airtable: {e}")
-            time.sleep(2 ** attempt)
-
-    logger.error("All Airtable fetch attempts failed")
-    return []
-
-
-def main(config_path="sync_config.json", dry_run=False):
-    """Main orchestrator function"""
-    try:
-        config = load_config(config_path)
-        logger.info(f"Config loaded: {len(config.get('sources', []))} sources")
-    except Exception:
-        logger.error("Aborting due to invalid config")
+def run_sync(dry_run=False):
+    """Run full sync."""
+    config = load_config()
+    if not config:
         return
 
-    all_data = []
+    sources = config.get("sources", [])
+    transform_rules = config.get("transform", {})
+    target = config.get("target", {})
 
-    for source in config.get("sources", []):
-        if source.get("api") == "stripe":
-            limit = source.get("params", {}).get("limit", 10)
-            all_data.extend(fetch_stripe_invoices(limit=limit))
-        elif source.get("api") == "airtable":
-            all_data.extend(fetch_airtable_records())
-
-    if dry_run:
-        logger.info(f"Dry run: {len(all_data)} items would be synced")
-    else:
-        # Placeholder: implement your actual sync logic
-        logger.info(f"Syncing {len(all_data)} items...")
-        # Example: write to Google Sheets or other target
-        logger.info("Sync completed successfully")
-
-    # Optional: write audit log
-    os.makedirs("logs", exist_ok=True)
-    audit_path = f"logs/audit_{int(time.time())}.json"
-    audit_data = {"synced_count": len(all_data), "timestamp": int(time.time())}
-    with open(audit_path, "w", encoding="utf-8") as f:
-        json.dump(audit_data, f, indent=2)
-    logger.info(f"Audit saved: {audit_path}")
-
+    for src in sources:
+        data = fetch_api_data(src)
+        data = transform_data(data, transform_rules)
+        if dry_run:
+            print(f"[DRY-RUN] Data prepared: {data}")
+        else:
+            success = push_to_target(target, data)
+            print(f"[SYNC] Pushed to {target.get('type')} - Success: {success}")
 
 if __name__ == "__main__":
-    parser = ArgumentParser(description="API Sync Orchestrator")
-    parser.add_argument("--config", default="sync_config.json", help="Path to config JSON")
-    parser.add_argument("--dry-run", action="store_true", help="Dry-run mode")
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--dry-run", action="store_true", help="Test sync without pushing")
     args = parser.parse_args()
-
-    main(config_path=args.config, dry_run=args.dry_run)
+    run_sync(dry_run=args.dry_run)
