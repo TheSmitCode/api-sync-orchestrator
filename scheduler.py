@@ -1,39 +1,44 @@
-
-#### scheduler.py
-```python
 import json
-import time
-from datetime import datetime
 import logging
-from sync import main  # Import main from sync.py
+import time
+from apscheduler.schedulers.blocking import BlockingScheduler
+from sync import main as sync_main
+from dotenv import load_dotenv
+import os
+
+# Load .env
+load_dotenv()
 
 # Logging
-logging.basicConfig(level=logging.INFO)
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+logging.basicConfig(level=LOG_LEVEL, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
-# Run the sync
+CONFIG_PATH = os.getenv("SYNC_CONFIG_PATH", "sync_config.json")
+SYNC_INTERVAL_SECONDS = int(os.getenv("SYNC_INTERVAL_SECONDS", 300))  # default 5 min
+
+scheduler = BlockingScheduler()
+
 def run_sync():
     try:
-        main("sync_config.json", dry_run=False)  # Full run
-        logger.info(f"Scheduled sync complete at {datetime.now()}")
+        logger.info("Starting scheduled sync...")
+        sync_main(config_path=CONFIG_PATH, dry_run=False)
     except Exception as e:
         logger.error(f"Scheduled sync failed: {e}")
 
-# Load schedule from JSON
 def load_schedule():
-    with open("sync_config.json", "r") as f:
-        data = json.load(f)
-    return data['schedule']
+    """Optional: Load a JSON schedule if you want custom times per source"""
+    schedule_file = os.getenv("SCHEDULE_FILE", "schedule.json")
+    if os.path.exists(schedule_file):
+        with open(schedule_file, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {}
 
-# Start scheduler
 if __name__ == "__main__":
-    from croniter import croniter
-    schedule_str = load_schedule()
-    cron = croniter(schedule_str, datetime.now())
-    next_run = cron.get_next(datetime)
-    logger.info(f"Starting scheduler with {schedule_str}. Next run at {next_run}")
-    while True:
-        if datetime.now() >= next_run:
-            run_sync()
-            next_run = cron.get_next(datetime)
-        time.sleep(60)  # Check every minute
+    # Example: run every X seconds
+    scheduler.add_job(run_sync, "interval", seconds=SYNC_INTERVAL_SECONDS)
+    logger.info(f"Scheduler started, running every {SYNC_INTERVAL_SECONDS} seconds")
+    try:
+        scheduler.start()
+    except (KeyboardInterrupt, SystemExit):
+        logger.info("Scheduler stopped.")
