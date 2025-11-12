@@ -1,11 +1,14 @@
+import os
 from apscheduler.schedulers.blocking import BlockingScheduler
 from sync import run_sync
 
-sched = BlockingScheduler()
+scheduler = BlockingScheduler()
 
-# Every 5 minutes
-sched.add_job(run_sync, 'cron', minute='*/5', kwargs={"dry_run": False})
+# Default every 5 min; replace with config if needed
+@scheduler.scheduled_job('cron', minute='*/5')
+def scheduled_sync():
+    run_sync()
 
 if __name__ == "__main__":
-    print("[SCHEDULER] Starting...")
-    sched.start()
+    os.environ["DRY_RUN"] = "1"  # Change to 0 to push
+    scheduler.start()

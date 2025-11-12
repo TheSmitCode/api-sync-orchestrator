@@ -2,23 +2,14 @@
   "sources": [
     {
       "api": "stripe",
-      "endpoint": "/v1/invoices",
-      "auth": {
-        "type": "bearer",
-        "token": "STRIPE_API_KEY"
-      },
-      "params": {
-        "limit": 10
-      }
+      "endpoint": "https://api.stripe.com/v1/invoices",
+      "auth": {"type": "bearer", "token": "STRIPE_API_KEY"},
+      "params": {"limit": 2}
     }
   ],
   "transform": {
-    "add_field": {
-      "timestamp": "{{ now() }}"
-    },
-    "filter": {
-      "status": "paid"
-    }
+    "add_field": {"timestamp": "{{ now() }}"},
+    "filter": {"status": "paid"}
   },
   "target": {
     "type": "airtable",

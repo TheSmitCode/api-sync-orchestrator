@@ -4,12 +4,13 @@ from sync import run_sync
 app = FastAPI(title="API Sync Orchestrator")
 
 @app.get("/sync")
-def trigger_sync(dry_run: bool = False):
-    """Trigger sync via API."""
-    run_sync(dry_run=dry_run)
-    return {"status": "success", "dry_run": dry_run}
+def sync_endpoint():
+    try:
+        run_sync()
+        return {"status": "success", "message": "Sync completed (dry-run if enabled)."}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 @app.get("/health")
-def health():
-    """Health check."""
+def health_check():
     return {"status": "ok"}
