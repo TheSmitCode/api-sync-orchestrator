@@ -1,61 +1,75 @@
-Write-Host "🚀 Starting API Sync Orchestrator setup..." -ForegroundColor Cyan
+<#
+.SYNOPSIS
+    Setup script for API Sync Orchestrator (Windows).
 
-# Detect OS (for cross-platform notes)
-$IsWindows = $true
+.DESCRIPTION
+    - Creates a Python virtual environment.
+    - Installs dependencies from requirements.txt.
+    - Copies .env.example to .env if it doesn't exist.
+    - Runs a dry-run to verify setup.
 
-# Step 1: Rust (must come first for Pydantic v2 build)
-if (!(Get-Command rustc -ErrorAction SilentlyContinue)) {
-    Write-Host "🦀 Rust not found — installing via winget..." -ForegroundColor Yellow
-    try {
-        winget install -e --id Rustlang.Rustup --silent --accept-source-agreements --accept-package-agreements
-        Write-Host "✅ Rust installed. Restarting PowerShell for PATH..." -ForegroundColor Green
-        Write-Host "Please re-run this script after restart." -ForegroundColor Yellow
-        exit 0  # Success, but prompt restart
-    } catch {
-        Write-Host "❌ Failed to install Rust via winget. Manual install: https://rustup.rs" -ForegroundColor Red
-        exit 1
-    }
+.NOTES
+    - Requires Python 3.8+
+    - Ensure PowerShell execution policy allows scripts: Set-ExecutionPolicy RemoteSigned
+#>
+
+# --------------------------
+# Step 0: Define variables
+# --------------------------
+$VenvDir = ".venv"
+$RequirementsFile = "requirements.txt"
+$EnvExample = ".env.example"
+$EnvFile = ".env"
+
+# --------------------------
+# Step 1: Create virtual environment
+# --------------------------
+if (-Not (Test-Path $VenvDir)) {
+    Write-Host "Creating virtual environment..."
+    python -m venv $VenvDir
 } else {
-    Write-Host "✅ Rust already installed." -ForegroundColor Green
+    Write-Host "Virtual environment already exists."
 }
 
-# Step 2: Ensure Python and Pip (after Rust)
-if (!(Get-Command python -ErrorAction SilentlyContinue)) {
-    Write-Host "❌ Python not found. Install Python 3.12+ from https://python.org" -ForegroundColor Red
+# --------------------------
+# Step 2: Activate virtual environment
+# --------------------------
+Write-Host "Activating virtual environment..."
+$ActivateScript = Join-Path $VenvDir "Scripts\Activate.ps1"
+if (Test-Path $ActivateScript) {
+    & $ActivateScript
+} else {
+    Write-Host "ERROR: Activation script not found!"
     exit 1
 }
 
-if (!(Get-Command pip -ErrorAction SilentlyContinue)) {
-    Write-Host "❌ pip not found. Run 'python -m ensurepip' or reinstall Python." -ForegroundColor Red
-    exit 1
+# --------------------------
+# Step 3: Upgrade pip and install dependencies
+# --------------------------
+Write-Host "Upgrading pip..."
+python -m pip install --upgrade pip
+
+if (Test-Path $RequirementsFile) {
+    Write-Host "Installing dependencies from $RequirementsFile..."
+    pip install -r $RequirementsFile
+} else {
+    Write-Host "WARNING: $RequirementsFile not found. Skipping dependency installation."
 }
 
-# Step 3: Create and activate virtual environment
-if (!(Test-Path ".venv")) {
-    Write-Host "🧱 Creating virtual environment..." -ForegroundColor Yellow
-    python -m venv .venv
+# --------------------------
+# Step 4: Create .env from example if missing
+# --------------------------
+if (-Not (Test-Path $EnvFile)) {
+    Copy-Item $EnvExample $EnvFile
+    Write-Host ".env file created from .env.example. Remember to update your API keys!"
+} else {
+    Write-Host ".env file already exists."
 }
 
-Write-Host "🔌 Activating virtual environment..." -ForegroundColor Yellow
-& .\.venv\Scripts\Activate.ps1
+# --------------------------
+# Step 5: Dry-run test
+# --------------------------
+Write-Host "Running dry-run test..."
+python sync.py --dry-run
 
-# Step 4: Upgrade pip (after Rust/Python ready)
-Write-Host "⬆️ Upgrading pip..." -ForegroundColor Yellow
-pip install --upgrade pip
-
-# Step 5: Install requirements (pips only after Rust)
-Write-Host "📦 Installing requirements..." -ForegroundColor Yellow
-pip install -r requirements.txt
-
-# Step 6: Test run
-Write-Host "🧪 Running dry-run test..." -ForegroundColor Yellow
-try {
-    python sync.py --dry-run
-    Write-Host "✅ Test successful! Ready to use." -ForegroundColor Green
-} catch {
-    Write-Host "⚠️ Test failed—check logs, but setup is complete." -ForegroundColor Yellow
-}
-
-Write-Host "✅ Setup complete! Run:" -ForegroundColor Green
-Write-Host "python sync.py --dry-run" -ForegroundColor Cyan
-Write-Host "python scheduler.py" -ForegroundColor Cyan
+Write-Host "✅ Setup complete. You can now run sync.py or main.py."

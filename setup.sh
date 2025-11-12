@@ -1,43 +1,61 @@
 #!/bin/bash
-echo "🚀 Starting API Sync Orchestrator setup..."
+# -------------------------------------------------
+# Setup script for API Sync Orchestrator (Mac/Linux)
+# -------------------------------------------------
+# 1. Create virtual environment
+# 2. Install dependencies
+# 3. Copy .env.example to .env if missing
+# 4. Run dry-run
+# -------------------------------------------------
 
-# Step 1: Rust (must come first for Pydantic v2 build)
-if ! command -v rustc & > /dev/null; then
-    echo "🦀 Rust not found — installing..."
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-    source $HOME/.cargo/env
-    echo "✅ Rust installed. Restarting terminal for PATH..."
-    echo "Please re-run this script after restart."
-    exit 0
+VENV_DIR=".venv"
+REQ_FILE="requirements.txt"
+ENV_EXAMPLE=".env.example"
+ENV_FILE=".env"
+
+# --------------------------
+# Step 1: Create virtual environment
+# --------------------------
+if [ ! -d "$VENV_DIR" ]; then
+    echo "Creating virtual environment..."
+    python3 -m venv $VENV_DIR
 else
-    echo "✅ Rust already installed."
+    echo "Virtual environment already exists."
 fi
 
-# Step 2: Ensure Python and Pip (after Rust)
-if ! command -v python3 & > /dev/null; then
-    echo "❌ Python not found. Install Python 3.12+ from python.org"
-    exit 1
+# --------------------------
+# Step 2: Activate virtual environment
+# --------------------------
+echo "Activating virtual environment..."
+source "$VENV_DIR/bin/activate"
+
+# --------------------------
+# Step 3: Upgrade pip and install dependencies
+# --------------------------
+echo "Upgrading pip..."
+python -m pip install --upgrade pip
+
+if [ -f "$REQ_FILE" ]; then
+    echo "Installing dependencies from $REQ_FILE..."
+    pip install -r $REQ_FILE
+else
+    echo "WARNING: $REQ_FILE not found. Skipping dependency installation."
 fi
 
-# Step 3: Venv
-if [ ! -d ".venv" ]; then
-    echo "🧱 Creating virtual environment..."
-    python3 -m venv .venv
+# --------------------------
+# Step 4: Create .env from example if missing
+# --------------------------
+if [ ! -f "$ENV_FILE" ]; then
+    cp "$ENV_EXAMPLE" "$ENV_FILE"
+    echo ".env file created from .env.example. Remember to update your API keys!"
+else
+    echo ".env file already exists."
 fi
 
-# Activate
-source .venv/bin/activate
-
-# Step 4: Upgrade pip (after Rust/Python ready)
-echo "⬆️ Upgrading pip..."
-pip install --upgrade pip
-
-# Step 5: Install requirements (pips only after Rust)
-echo "📦 Installing requirements..."
-pip install -r requirements.txt
-
-# Step 6: Test run
-echo "🧪 Running dry-run test..."
+# --------------------------
+# Step 5: Dry-run test
+# --------------------------
+echo "Running dry-run test..."
 python sync.py --dry-run
 
-echo "✅ Setup complete! Run: python sync.py --dry-run"
+echo "✅ Setup complete. You can now run sync.py or main.py."
