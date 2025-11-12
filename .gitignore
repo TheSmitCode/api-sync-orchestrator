@@ -105,7 +105,6 @@ celerybeat.pid
 
 # Environments
 .env
-.env.*
 .venv
 env/
 venv/
@@ -167,13 +166,8 @@ __pycache__/**
 # Log files (keep for demo, but ignore sensitive)
 logs/*.json
 
-# Environment files
-.env
-
 # Virtual Environments
 .venv312/
-.venv3*  # Pattern for future v3.x venvs
 
 # Test Files
 test-sync.json
-.vercel

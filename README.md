@@ -39,9 +39,11 @@ Define a sync in `sync_config.json`:
     "table": "Invoices",
     "api_key": "keyXXXX"
   },
-  "schedule": "*/5 * * * *",  // Every 5 minutes
+  "schedule": "*/5 * * * *",
   "retries": 3
-}🛠 Tech Stack
+}
+Run: python sync.py --dry-run (test), python sync.py (full). Output: Audit in logs/audit_*.json.
+🛠 Tech Stack
 
 Core: Python 3.8+, requests for API calls, json for configs.
 API Layer: FastAPI for REST endpoints (e.g., /sync, /logs).
@@ -55,34 +57,28 @@ Easy One-Command Setup (Rust first for Pydantic v2 build, then pips):
 Windows: .\setup.ps1 (PowerShell).
 Mac/Linux: bash setup.sh.
 
-It creates venv, installs deps (pips after Rust), and tests with dry-run.
+It creates venv, installs deps (pips after Rust), copies .env.example to .env, and tests with dry-run.
 Manual (if preferred):
 
-Clone:
-textgit clone https://github.com/TheSmitCode/api-sync-orchestrator.git && cd api-sync-orchestrator
-
+Clone:textgit clone https://github.com/TheSmitCode/api-sync-orchestrator.git && cd api-sync-orchestrator
 Rust (required for Pydantic v2 build):
-
 Windows: winget install Rustlang.Rustup.
 Mac/Linux: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh.
 
-
-Venv & Deps:
-textpython -m venv .venv
+Venv & Deps:textpython -m venv .venv
 .venv\Scripts\activate  # Windows; source .venv/bin/activate for Mac/Linux
 pip install --upgrade pip
 pip install -r requirements.txt
+.env Setup:
+Copy .env.example to .env.
+Edit .env with real keys (Stripe, Airtable).
 
-Test:
-textpython sync.py --dry-run  # Test without "pushing"
+Test:textpython sync.py --dry-run  # Test without "pushing"
 python sync.py  # Full sync (dummy mode)
-
-Scheduler:
-textpython scheduler.py  # Runs on cron from JSON (every minute for MVP)
-
-API:
-textpython main.py  # Starts server at http://127.0.0.1:8000
-
+Scheduler:textpython scheduler.py  # Runs on cron from JSON (every 5 mins)
+API:textpython main.py  # Starts server at http://127.0.0.1:8000
+curl http://127.0.0.1:8000/health  # {"status": "healthy"}
+curl.exe -X POST "http://127.0.0.1:8000/sync" -H "Content-Type: application/json" --data-binary "@test-sync.json"  # Complete audit
 
 Templates Included: E-comm (Stripe → Shopify), CRM (HubSpot → Airtable). Fork & customize!
 🤝 Contributing
@@ -90,7 +86,6 @@ Templates Included: E-comm (Stripe → Shopify), CRM (HubSpot → Airtable). For
 PRs welcome: Add new sources (e.g., GitHub API) or targets.
 Issues: Report bugs or request features (e.g., GraphQL support).
 Stars/Forks: Help spread the word—aiming for 100+ from r/Python & Upwork shares!
-
 📄 License
 MIT—free for commercial use. See LICENSE.
 
