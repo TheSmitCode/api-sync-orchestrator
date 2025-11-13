@@ -1,3 +1,8 @@
+# =========================
+# FILE: sync.py
+# DESCRIPTION: Handles data fetching, transformation, and pushing to targets.
+# =========================
+
 import json
 import time
 import os
@@ -27,6 +32,7 @@ logger = logging.getLogger(__name__)
 
 CONFIG_FILE = "sync_config.json"
 
+
 def fetch_stripe_invoices(limit=5, token=None):
     """
     Fetch invoices from Stripe.
@@ -45,6 +51,7 @@ def fetch_stripe_invoices(limit=5, token=None):
     except requests.exceptions.RequestException as e:
         logger.error(f"[ERROR] Fetching Stripe invoices: {e}")
         return []
+
 
 def run_sync(dry_run=False):
     """
@@ -86,6 +93,7 @@ def run_sync(dry_run=False):
     target_config = config.get("target", {})
     audit = push_to_target(transformed_data, target_config)
     logger.info("[INFO] Sync complete.")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run API Sync Orchestrator")
