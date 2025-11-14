@@ -2,7 +2,7 @@
   "version": 2,
   "builds": [
     {
-      "src": "main.py",
+      "src": "api/main.py",
       "use": "@vercel/python",
       "config": {
         "maxLambdaSize": "50mb"
@@ -12,17 +12,11 @@
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "main.py"
+      "dest": "api/main.py"
     }
   ],
   "env": {
-    "PYTHONUNBUFFERED": "1",
-    "API_KEY": "sk_test_your_real_key_here",
-    "STRIPE_SECRET_KEY": "sk_test_your_real_key_here"
-  },
-  "build": {
-    "env": {
-      "PYTHON_VERSION": "3.13"
-    }
+    "STRIPE_SECRET_KEY": "@STRIPE_SECRET_KEY",
+    "PORT": "8000"
   }
 }

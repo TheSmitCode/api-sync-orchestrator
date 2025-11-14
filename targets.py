@@ -1,3 +1,4 @@
+# targets.py
 import os
 import logging
 import json
@@ -7,52 +8,96 @@ logger = logging.getLogger(__name__)
 
 def push_to_target(data, target=None):
     """
-    Push data to target (e.g., Airtable).
-    
+    Push data to a target such as Airtable or console debugging.
+
     Args:
         data (list): List of dicts to push.
-        target (dict, optional): Dict with 'type', 'base_id', 'table', 'api_key'.
-    
+        target (dict, optional): Should contain:
+            - type: "airtable" or "console"
+            - base_id, table: for Airtable (future)
+            - api_key: ENV var name containing Airtable API key
+
     Returns:
-        dict: Audit of push (timestamp, count, sample).
-    
-    Raises:
-        ValueError: If target is invalid.
+        dict: Basic audit information about the sync.
     """
+
+    # ---- Validate data ----
     if not isinstance(data, list):
         raise ValueError("Data must be a list of dicts")
-    
+
     if target is None:
         target = {}
-    
+
     if not isinstance(target, dict):
         raise ValueError("Target must be a dict")
-    
+
     target_type = target.get("type", "console")
-    
+
+    # ---- Airtable push ----
     if target_type == "airtable":
         api_key_name = target.get("api_key")
-        api_key = os.getenv(api_key_name, f"DUMMY_{api_key_name}")
-        logger.info(f"Pushing {len(data)} records to Airtable (api_key={api_key[:6]}...)")
-        # Real Airtable push (Day 7)
+
+        if not api_key_name:
+            logger.error("Airtable target missing 'api_key' field.")
+            return {
+                "timestamp": datetime.now().isoformat(),
+                "synced_count": 0,
+                "target_type": "airtable",
+                "error": "Missing api_key"
+            }
+
+        api_key = os.getenv(api_key_name)
+        if not api_key:
+            logger.warning(
+                f"Airtable API key '{api_key_name}' not found in env — using dummy."
+            )
+            api_key = f"DUMMY_{api_key_name}"
+
+        logger.info(
+            f"Pushing {len(data)} records to Airtable (key={api_key[:6]}...)"
+        )
+
+        # -------- REAL Airtable push planned for Day 7 --------
+        # For now we emulate a successful sync.
+
         audit = {
             "timestamp": datetime.now().isoformat(),
             "synced_count": len(data),
             "target_type": target_type,
             "data_sample": data[:2] if data else []
         }
-        audit_file = f"logs/airtable_audit_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+
+        # Ensure logs directory exists
+        os.makedirs("logs", exist_ok=True)
+
+        audit_file = (
+            f"logs/airtable_audit_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        )
+
         with open(audit_file, "w") as f:
             json.dump(audit, f, indent=2)
-        logger.info(f"Airtable push complete (audit: {audit_file})")
+
+        logger.info(f"Airtable push complete (audit saved: {audit_file})")
+
         return audit
-    else:
-        logger.info(f"Pushing {len(data)} records to {target_type}: {data[:2]}")  # Log sample
-        return {"timestamp": datetime.now().isoformat(), "synced_count": len(data), "target_type": target_type}
+
+    # ---- Unknown or console target: fallback to logging only ----
+    logger.info(
+        f"Pushing {len(data)} records to {target_type} (sample: {data[:2]})"
+    )
+
+    return {
+        "timestamp": datetime.now().isoformat(),
+        "synced_count": len(data),
+        "target_type": target_type,
+        "data_sample": data[:2] if data else []
+    }
+
 
 if __name__ == "__main__":
-    # Example usage
+    # Example debug usage
     sample_data = [{"id": "1", "status": "paid"}]
     sample_target = {"type": "airtable", "api_key": "AIRTABLE_API_KEY"}
+
     audit = push_to_target(sample_data, sample_target)
     print(audit)

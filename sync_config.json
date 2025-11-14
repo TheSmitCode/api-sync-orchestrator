@@ -2,10 +2,9 @@
   "sources": [
     {
       "api": "stripe",
-      "endpoint": "/v1/invoices",
       "auth": {
         "type": "bearer",
-        "token": "sk_test_..."
+        "token": null
       },
       "params": {
         "limit": 2
@@ -24,8 +23,7 @@
     "type": "airtable",
     "base_id": "appXXXX",
     "table": "Invoices",
-    "api_key": "keyXXXX"
+    "api_key": "AIRTABLE_API_KEY"
   },
-  "schedule": "*/5 * * * *",
-  "retries": 3
+  "schedule": "*/5 * * * *"
 }
