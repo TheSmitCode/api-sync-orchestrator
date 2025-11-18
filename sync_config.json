@@ -1,29 +1,9 @@
 {
-  "sources": [
+  "targets": [
     {
-      "api": "stripe",
-      "auth": {
-        "type": "bearer",
-        "token": null
-      },
-      "params": {
-        "limit": 2
-      }
+      "name": "example-httpbin",
+      "url": "https://httpbin.org/get",
+      "timeout": 10
     }
-  ],
-  "transform": {
-    "add_field": {
-      "timestamp": "{{ now() }}"
-    },
-    "filter": {
-      "status": "paid"
-    }
-  },
-  "target": {
-    "type": "airtable",
-    "base_id": "appXXXX",
-    "table": "Invoices",
-    "api_key": "AIRTABLE_API_KEY"
-  },
-  "schedule": "*/5 * * * *"
+  ]
 }
