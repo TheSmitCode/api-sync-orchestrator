@@ -1,23 +1,26 @@
 from __future__ import annotations
+import os
+import json
+import tempfile
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, ConfigDict
 from typing import Dict, Any
 import uvicorn
-import os
-import json
 from loguru import logger
 
-# Ensure serverless-safe temp directory exists
-TMP_DIR = "/tmp"
+# Serverless-safe temp directory (cross-platform)
+TMP_DIR = tempfile.gettempdir()
 os.makedirs(TMP_DIR, exist_ok=True)
 
-from sync import run_sync  # import AFTER creating /tmp
+# Import run_sync after TMP_DIR exists (your original pattern)
+from sync import run_sync  # noqa: E402
 
 app = FastAPI(title="API Sync Orchestrator", version="1.0.0")
 
 
 class SyncRequest(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True, from_attributes=True)
+    # Correct typed assignment for Pydantic v2 ConfigDict usage
+    model_config: ConfigDict = ConfigDict(arbitrary_types_allowed=True, from_attributes=True)
     config: Dict[str, Any]
     dry_run: bool = False
 
@@ -32,7 +35,7 @@ def trigger_sync(request: SyncRequest):
     try:
         # Save config to temp file
         temp_config = os.path.join(TMP_DIR, "temp_config.json")
-        with open(temp_config, "w") as f:
+        with open(temp_config, "w", encoding="utf-8") as f:
             json.dump(request.config, f, indent=2)
 
         # Run sync
@@ -43,12 +46,12 @@ def trigger_sync(request: SyncRequest):
         audit = {}
         if os.path.exists(audit_path):
             try:
-                with open(audit_path, "r") as f:
+                with open(audit_path, "r", encoding="utf-8") as f:
                     audit = json.load(f)
             except Exception as e:
                 logger.error(f"Failed to read audit file: {e}")
 
-        # Cleanup
+        # Cleanup temp config (best-effort)
         try:
             os.remove(temp_config)
         except Exception:
@@ -58,7 +61,7 @@ def trigger_sync(request: SyncRequest):
             "status": "success",
             "dry_run": request.dry_run,
             "result": result,
-            "audit": audit
+            "audit": audit,
         }
 
     except Exception as e:
@@ -71,6 +74,8 @@ def health():
     return {"status": "healthy", "version": "1.0.0"}
 
 
+# Allow running directly for local dev: `python api/main.py` or container usage
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
-    uvicorn.run("api.main:app", host="0.0.0.0", port=port, reload=True)
+    # Use uvicorn.run with app object to avoid import path issues
+    uvicorn.run(app, host="0.0.0.0", port=port, reload=True)

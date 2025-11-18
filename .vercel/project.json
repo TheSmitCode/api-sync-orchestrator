@@ -1,16 +1,1 @@
-{
-  "projectId": "prj_4r39kOY5et3hiuQi0FXVqizdjmmV",
-  "orgId": "team_zUz8VZTZLwYv0TuS7bZa5pMF",
-  "projectName": "api-sync-orchestrator",
-  "settings": {
-    "createdAt": 1762947889619,
-    "framework": null,
-    "devCommand": null,
-    "installCommand": null,
-    "buildCommand": null,
-    "outputDirectory": null,
-    "rootDirectory": null,
-    "directoryListing": false,
-    "nodeVersion": "22.x"
-  }
-}
+{"projectId":"prj_4r39kOY5et3hiuQi0FXVqizdjmmV","orgId":"team_zUz8VZTZLwYv0TuS7bZa5pMF","projectName":"api-sync-orchestrator"}

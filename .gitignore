@@ -172,3 +172,4 @@ logs/*.json
 # Test Files
 test-sync.json
 .env*.local
+.vercel

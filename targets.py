@@ -6,6 +6,7 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
+
 def push_to_target(data, target=None):
     """
     Push data to a target such as Airtable or console debugging.
@@ -53,9 +54,9 @@ def push_to_target(data, target=None):
             )
             api_key = f"DUMMY_{api_key_name}"
 
-        logger.info(
-            f"Pushing {len(data)} records to Airtable (key={api_key[:6]}...)"
-        )
+        # Log first part of key for diagnostic only (don't leak full key)
+        display_key = api_key[:6] + "..." if len(api_key) > 6 else api_key
+        logger.info(f"Pushing {len(data)} records to Airtable (key={display_key})")
 
         # -------- REAL Airtable push planned for Day 7 --------
         # For now we emulate a successful sync.
@@ -68,23 +69,19 @@ def push_to_target(data, target=None):
         }
 
         # Ensure logs directory exists
-        os.makedirs("logs", exist_ok=True)
-
-        audit_file = (
-            f"logs/airtable_audit_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-        )
-
-        with open(audit_file, "w") as f:
-            json.dump(audit, f, indent=2)
-
-        logger.info(f"Airtable push complete (audit saved: {audit_file})")
+        try:
+            os.makedirs("logs", exist_ok=True)
+            audit_file = f"logs/airtable_audit_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+            with open(audit_file, "w", encoding="utf-8") as f:
+                json.dump(audit, f, indent=2)
+            logger.info(f"Airtable push complete (audit saved: {audit_file})")
+        except Exception as e:
+            logger.warning(f"Could not write audit file to logs/: {e}")
 
         return audit
 
     # ---- Unknown or console target: fallback to logging only ----
-    logger.info(
-        f"Pushing {len(data)} records to {target_type} (sample: {data[:2]})"
-    )
+    logger.info(f"Pushing {len(data)} records to {target_type} (sample: {data[:2]})")
 
     return {
         "timestamp": datetime.now().isoformat(),
